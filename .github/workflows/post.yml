@@ -1,0 +1,37 @@
+name: Post to X
+
+on:
+  schedule:
+    # 毎時5分に実行（JST=UTC+9）
+    - cron: "5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: state-write
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Run post script
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          CONTENT_REPO_PAT: ${{ secrets.CONTENT_REPO_PAT }}
+          CONTENT_REPO: nidena/x-bot-store
+        run: npx ts-node src/post.ts
