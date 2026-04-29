@@ -2,8 +2,16 @@ name: Post to X
 
 on:
   schedule:
-    # 毎時5分に実行（JST=UTC+9）
-    - cron: "5 * * * *"
+    # 平日 08:10 JST = 23:10 UTC (前日 日〜木)
+    - cron: "10 23 * * 0-4"
+    # 平日 12:30 JST = 03:30 UTC (月〜金)
+    - cron: "30 3 * * 1-5"
+    # 平日 20:20 JST = 11:20 UTC (月〜金)
+    - cron: "20 11 * * 1-5"
+    # 土日 14:43 JST = 05:43 UTC (土〜日)
+    - cron: "43 5 * * 0,6"
+    # 土日 22:23 JST = 13:23 UTC (土〜日)
+    - cron: "23 13 * * 0,6"
   workflow_dispatch:
 
 concurrency:
