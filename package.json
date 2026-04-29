@@ -1,0 +1,21 @@
+{
+  "name": "x-bot-runner",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "post": "ts-node src/post.ts",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "js-yaml": "^4.1.0",
+    "oauth-1.0a": "^2.2.6"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.14.0",
+    "dotenv": "^17.4.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}
