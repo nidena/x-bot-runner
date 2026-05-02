@@ -13,6 +13,7 @@ interface Post {
   posted_at: string | null;
   tweet_id: string | null;
   media: string[];
+  skip?: boolean;
 }
 
 interface ContentFile {
@@ -149,7 +150,7 @@ async function main(): Promise<void> {
 
   // 未投稿かつ予定時刻を過ぎたものを選ぶ（IDの昇順で最初の1件）
   const target = posts
-    .filter((p) => p.posted_at === null && new Date(p.scheduled_at) <= now)
+    .filter((p) => !p.skip && p.posted_at === null && new Date(p.scheduled_at) <= now)
     .sort((a, b) => a.id.localeCompare(b.id))[0];
 
   if (!target) {
