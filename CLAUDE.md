@@ -42,7 +42,10 @@ state/               # カーソル・スナップショット等
 
 ## 開発フェーズ
 - Phase1: 基盤セットアップ ✅
-- Phase2: MVP（テキスト投稿の自動化）← 現在
+- Phase2: MVP（テキスト投稿の自動化）✅
+  - src/post.ts：投稿スクリプト
+  - src/daily-report.ts：前日21:00 JSTに翌日の投稿予定をSlack通知
+  - .github/workflows/post.yml / daily-report.yml
 - Phase3: メディア投稿対応
 - Phase4: 監視・メトリクス通知
 - Phase5: LLM連携（Bot高度化）
@@ -61,35 +64,19 @@ state/               # カーソル・スナップショット等
 - [ ] GitHub SecretsにANTHROPIC_API_KEYを登録済み
 - [ ] x-bot-storeリポジトリが作成済み・初期構成済み
 
-## Claude Codeへのタスク（Phase2: MVP）
-以下を順番に実装すること。
+## 実装済みスクリプト
 
-1. Node.js + TypeScript環境構築
-   - package.json（依存: typescript, ts-node, yaml, twitter-api-v2）
-   - tsconfig.json
-   - .gitignore
-   
-2. x-bot-storeのチェックアウト処理
-   - CONTENT_REPO_PATを使ってPrivateリポジトリをclone
-   - src/lib/content-repo.ts として実装
+### src/post.ts
+- posts/YYYY-MM.yamlを読み込み、未投稿かつ時刻到来分を抽出（1件）
+- POST https://api.x.com/2/tweets で投稿
+- 成功時にposted_at・tweet_idをYAMLに書き戻し（GitHub Content API経由、[skip ci]付与）
+- 成功・エラー時にSlack通知
 
-3. 投稿スクリプト実装
-   - posts/YYYY-MM.yamlを読み込み、未投稿かつ時刻到来分を抽出
-   - POST https://api.x.com/2/tweets で投稿
-   - 成功時にposted_at・tweet_idをYAMLに書き戻してcommit & push（[skip ci]付与）
-   - エラー時はSlack通知
-   - src/post.ts として実装
-
-4. GitHub Actionsワークフロー定義
-   - .github/workflows/post.yml
-   - cron: 5分おき
-   - concurrency: state-write
-   - workflow_dispatchも有効化
-
-5. エラーハンドリング共通処理
-   - 401/403/429それぞれの対処
-   - 429はx-rate-limit-resetヘッダを見てexponential backoff
-   - src/lib/error-handler.ts として実装
+### src/daily-report.ts
+- 毎日21:00 JST（cron: 0 12 * * * UTC）に起動
+- 翌日のJST日付を計算してposts/YYYY-MM.yamlから該当投稿を抽出
+- 投稿本文全文・時刻・IDをSlackへ通知（予定ゼロも通知）
+- 読み取り専用のためconcurrencyグループ不要
 
 ## 実装上の注意
 - APIホスト: https://api.x.com
