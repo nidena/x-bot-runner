@@ -99,7 +99,7 @@ async function main(): Promise<void> {
   });
 
   const header = `📅 明日（${dateStr} JST）の投稿予定 ${tomorrowPosts.length}件`;
-  const body = entries.join("\n\n─────\n\n");
+  const body = entries.join("\n─────\n");
 
   await notifySlack(`${header}\n\n${body}`);
   console.log(`Notified Slack: ${tomorrowPosts.length} posts for ${dateStr}.`);
