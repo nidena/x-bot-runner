@@ -2,8 +2,8 @@ name: Daily Post Report
 
 on:
   schedule:
-    # 毎日 21:00 JST = 12:00 UTC
-    - cron: "0 12 * * *"
+    # 毎日 20:00 JST = 11:00 UTC
+    - cron: "0 11 * * *"
   workflow_dispatch:
 
 jobs:

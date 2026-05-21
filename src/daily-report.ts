@@ -45,7 +45,14 @@ async function fetchYamlFile(path: string): Promise<string | null> {
 }
 
 function tomorrowInJst(): { year: number; month: number; dateStr: string } {
-  const d = new Date(Date.now() + JST_OFFSET_MS + 24 * 60 * 60 * 1000);
+  const nowJstMs = Date.now() + JST_OFFSET_MS;
+  const nowJst = new Date(nowJstMs);
+  const jstHour = nowJst.getUTCHours();
+
+  // 深夜0〜5時台は前日20時スケジュールの遅延実行とみなす
+  const offsetDays = jstHour < 6 ? 0 : 1;
+
+  const d = new Date(nowJstMs + offsetDays * 24 * 60 * 60 * 1000);
   const year = d.getUTCFullYear();
   const month = d.getUTCMonth() + 1;
   const day = d.getUTCDate();
