@@ -118,6 +118,23 @@ async function notifySlack(message: string): Promise<void> {
   await axios.post(SLACK_WEBHOOK_URL, { text: message });
 }
 
+// ── 日時ユーティリティ ─────────────────────────────────────────────────────────
+
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+// scheduled_at (JST, +09:00) と表記を揃えるため、posted_atもJSTオフセット付きで出力する
+function toJstIsoString(date: Date): string {
+  const jst = new Date(date.getTime() + JST_OFFSET_MS);
+  const y = jst.getUTCFullYear();
+  const mo = String(jst.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(jst.getUTCDate()).padStart(2, "0");
+  const h = String(jst.getUTCHours()).padStart(2, "0");
+  const mi = String(jst.getUTCMinutes()).padStart(2, "0");
+  const s = String(jst.getUTCSeconds()).padStart(2, "0");
+  const ms = String(jst.getUTCMilliseconds()).padStart(3, "0");
+  return `${y}-${mo}-${d}T${h}:${mi}:${s}.${ms}+09:00`;
+}
+
 // ── 月次YAMLのパス ────────────────────────────────────────────────────────────
 
 function yamlPath(date: Date): string {
@@ -160,7 +177,7 @@ async function main(): Promise<void> {
 
   console.log(`Posting [${target.id}]: ${target.text.slice(0, 40)}...`);
   const tweetId = await postTweet(target.text);
-  const postedAt = new Date().toISOString();
+  const postedAt = toJstIsoString(new Date());
 
   // YAMLを更新
   target.tweet_id = tweetId;
