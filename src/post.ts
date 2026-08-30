@@ -165,14 +165,27 @@ async function main(): Promise<void> {
 
   const posts = (yaml.load(file.content) as Post[]) ?? [];
 
-  // 未投稿かつ予定時刻を過ぎたものを選ぶ（IDの昇順で最初の1件）
-  const target = posts
+  // 未投稿かつ予定時刻を過ぎたものを抽出（scheduled_atの昇順）
+  const overdue = posts
     .filter((p) => !p.skip && p.posted_at === null && new Date(p.scheduled_at) <= now)
-    .sort((a, b) => a.id.localeCompare(b.id))[0];
+    .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at));
 
-  if (!target) {
+  if (overdue.length === 0) {
     console.log("No scheduled posts ready to publish.");
     return;
+  }
+
+  // 直近（scheduled_atが最新）の1件のみ投稿する。
+  // それより古いバックログは内容と投稿時刻がズレてしまうため投稿せず自動skipし、
+  // 次回以降は常に「直近の予定分のみ」を扱う状態に自己回復させる。
+  const target = overdue[overdue.length - 1];
+  const staleBacklog = overdue.slice(0, -1);
+
+  for (const stale of staleBacklog) {
+    console.log(
+      `Auto-skipping stale backlog [${stale.id}] (scheduled_at=${stale.scheduled_at})`
+    );
+    stale.skip = true;
   }
 
   console.log(`Posting [${target.id}]: ${target.text.slice(0, 40)}...`);
@@ -184,14 +197,23 @@ async function main(): Promise<void> {
   target.posted_at = postedAt;
   const updatedYaml = yaml.dump(posts, { lineWidth: -1 });
 
-  await updateYamlFile(
-    path,
-    updatedYaml,
-    file.sha,
-    `[skip ci] post: ${target.id}`
-  );
+  const skippedIds = staleBacklog.map((p) => p.id);
+  const commitMessage =
+    skippedIds.length > 0
+      ? `[skip ci] post: ${target.id} (auto-skip backlog: ${skippedIds.join(", ")})`
+      : `[skip ci] post: ${target.id}`;
 
-  const slackMsg = `✅ Posted [${target.id}]\nhttps://x.com/i/web/status/${tweetId}\n${target.text.slice(0, 100)}`;
+  await updateYamlFile(path, updatedYaml, file.sha, commitMessage);
+
+  const skipNote =
+    staleBacklog.length > 0
+      ? `\n\n⏭️ 自動skip: ${staleBacklog.length}件（予定時刻を過ぎたバックログのため未投稿）\n` +
+        staleBacklog
+          .map((p) => `- [${p.id}] 予定 ${p.scheduled_at}`)
+          .join("\n")
+      : "";
+
+  const slackMsg = `✅ Posted [${target.id}]\nhttps://x.com/i/web/status/${tweetId}\n${target.text.slice(0, 100)}${skipNote}`;
   await notifySlack(slackMsg);
 
   console.log(`Done. tweet_id=${tweetId}`);
